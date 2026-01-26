@@ -1,10 +1,13 @@
 package utils
 
-import "container/list"
+import (
+	"container/list"
+	"fmt"
+)
 
 // BFSShortestPath returns the shortest path from start to end (inclusive).
 // If no path exists, it returns nil.
-func BFSShortestPath(f *Farm) []*Room {
+func BFSShortestPath(f *Farm, blocked map[string]bool) []*Room {
 	start := f.Start
 	end := f.End
 	if start == nil || end == nil {
@@ -29,6 +32,11 @@ func BFSShortestPath(f *Farm) []*Room {
 			if visited[nxt] {
 				continue
 			}
+
+			if nxt != start && nxt != end && blocked[nxt.Name] {
+				continue
+			}
+
 			visited[nxt] = true
 			parent[nxt] = cur
 
@@ -58,4 +66,28 @@ func BFSShortestPath(f *Farm) []*Room {
 		rev[i], rev[j] = rev[j], rev[i]
 	}
 	return rev
+}
+
+// FindDisjointPaths repeatedly finds shortest paths while blocking intermediate rooms
+// from previously chosen paths. Returns paths including start and end.
+func FindDisjointPaths(f *Farm) [][]*Room {
+	blocked := make(map[string]bool)
+	var paths [][]*Room
+
+	for {
+		p := BFSShortestPath(f, blocked)
+		if p == nil {
+			fmt.Println("Breaked")
+			break
+		}
+
+		paths = append(paths, p)
+
+		// block intermediate rooms to force vertex-disjoint paths
+		for i := 1; i < len(p)-1; i++ {
+			blocked[p[i].Name] = true
+		}
+	}
+
+	return paths
 }

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"lem-in/utils"
 	"os"
 	"strings"
+
+	"lem-in/utils"
 )
 
 func main() {
@@ -13,24 +14,37 @@ func main() {
 		return
 	}
 
-	_, farm, err := utils.ParseFarm(os.Args[1])
+	raw, farm, err := utils.ParseFarm(os.Args[1])
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
 		return
 	}
 
-	path := utils.BFSShortestPath(farm)
-	if path == nil {
+	paths := utils.FindDisjointPaths(farm)
+	if paths == nil {
 		fmt.Println("ERROR: invalid data format")
 		return
 	}
 
-	// Print path as names (debug)
-	names := make([]string, 0, len(path))
-	for _, r := range path {
-		names = append(names, r.Name)
+	///////////////////
+	fmt.Println("Found paths:", len(paths))
+	for i, p := range paths {
+		names := make([]string, 0, len(p))
+		for _, r := range p {
+			names = append(names, r.Name)
+		}
+		fmt.Printf("P%d: %s (edges=%d)\n", i+1, strings.Join(names, " -> "), len(p)-1)
 	}
-	fmt.Println("Shortest path:", strings.Join(names, " -> "))
-	fmt.Println("Edges:", len(path)-1)
+	///////////////////
 
+	assign := utils.AssignAnts(farm.Ants, paths)
+
+	// Print input back exactly
+	fmt.Print(raw)
+	if len(raw) > 0 && raw[len(raw)-1] != '\n' {
+		fmt.Print("\n")
+	}
+	fmt.Println()
+
+	utils.SimulateAndPrint(farm, paths, assign)
 }
