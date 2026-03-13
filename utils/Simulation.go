@@ -6,13 +6,8 @@ import (
 	"strings"
 )
 
-type AntState struct {
-	ID      int
-	PathIdx int
-	Pos     int // index inside path slice
-	Done    bool
-}
-
+// SimulateAndPrint advances ants one step per turn, respecting room occupancy,
+// and prints each turn in the required `L<id>-<room>` format.
 func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 	ants := make([]*AntState, 0, f.Ants)
 	for id := 1; id <= f.Ants; id++ {

@@ -2,6 +2,7 @@ package utils
 
 import "strings"
 
+// isLinkLine checks whether a line matches the `roomA-roomB` link format.
 func isLinkLine(s string) bool {
 	// exactly one '-', not at ends, and no spaces
 	if strings.ContainsAny(s, " \t") {
@@ -16,6 +17,7 @@ func isLinkLine(s string) bool {
 	return true
 }
 
+// parseLink splits a validated link line and rejects illegal room-name prefixes.
 func parseLink(s string) (string, string, error) {
 	parts := strings.Split(s, "-")
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
@@ -30,6 +32,7 @@ func parseLink(s string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
+// linkKey builds a stable unordered key so `a-b` and `b-a` count as the same link.
 func linkKey(a, b string) string {
 	if a < b {
 		return a + "|" + b

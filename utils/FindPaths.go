@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// BFSShortestPath returns the shortest path from start to end (inclusive).
-// If no path exists, it returns nil.
+// BFSShortestPath uses breadth-first search to find the shortest available
+// route from start to end while skipping any blocked intermediate rooms.
 func BFSShortestPath(f *Farm, blocked map[string]bool) []*Room {
 	start := f.Start
 	end := f.End
@@ -68,20 +68,32 @@ func BFSShortestPath(f *Farm, blocked map[string]bool) []*Room {
 	return rev
 }
 
-// FindDisjointPaths repeatedly finds shortest paths while blocking intermediate rooms
-// from previously chosen paths. Returns paths including start and end.
+// FindDisjointPaths keeps taking the current shortest path, then blocks its
+// interior rooms so the next search produces a vertex-disjoint alternative.
 func FindDisjointPaths(f *Farm) [][]*Room {
 	blocked := make(map[string]bool)
 	var paths [][]*Room
 
 	for {
 		p := BFSShortestPath(f, blocked)
+		
+		/////////////////////
+		names := make([]string, 0, len(p))
+		for _, room := range p {
+			names = append(names, room.Name)
+		}
+		fmt.Printf("Found Path: %v\n", names) // logger
+		////////////////////
 		if p == nil {
 			fmt.Println("Breaked")
 			break
 		}
 
 		paths = append(paths, p)
+
+		if len(p) == 2 {
+			break
+		}
 
 		// block intermediate rooms to force vertex-disjoint paths
 		for i := 1; i < len(p)-1; i++ {

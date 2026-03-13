@@ -5,12 +5,14 @@ import (
 	"strings"
 )
 
+// isRoomLine checks whether a line looks like `name x y`.
 func isRoomLine(s string) bool {
 	// room: 3 tokens, no '-' token style
 	parts := strings.Fields(s)
 	return len(parts) == 3 && !strings.Contains(parts[0], "-")
 }
 
+// parseRoom converts a room line into a Room after validating its name and coordinates.
 func parseRoom(s string) (*Room, error) {
 	parts := strings.Fields(s)
 	if len(parts) != 3 {

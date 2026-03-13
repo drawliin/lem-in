@@ -11,6 +11,8 @@ import (
 
 var ErrInvalid = errors.New("invalid data format")
 
+// ParseFarm reads the input file, keeps the original text for later printing,
+// and converts the room/link description into an in-memory graph.
 func ParseFarm(filename string) (raw string, farm *Farm, err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -58,7 +60,7 @@ func ParseFarm(filename string) (raw string, farm *Farm, err error) {
 		if !gotAnts {
 			n, convErr := strconv.Atoi(line)
 			if convErr != nil || n <= 0 {
-				return raw, nil, fmt.Errorf("convert err: "+line)
+				return raw, nil, fmt.Errorf("convert err: " + line)
 			}
 			f.Ants = n
 			gotAnts = true
@@ -68,7 +70,7 @@ func ParseFarm(filename string) (raw string, farm *Farm, err error) {
 		// decide if this is a room or a link
 		if isRoomLine(line) {
 			if linksMode {
-				return raw, nil, fmt.Errorf("Found Room After Link") // rooms after links => invalid
+				return raw, nil, fmt.Errorf("Found Room After Link %d", lineNo) // rooms after links => invalid
 			}
 			r, roomErr := parseRoom(line)
 			if roomErr != nil {
@@ -105,15 +107,15 @@ func ParseFarm(filename string) (raw string, farm *Farm, err error) {
 			ra := f.Rooms[a]
 			rb := f.Rooms[b]
 			if ra == nil || rb == nil {
-				return raw, nil, fmt.Errorf("Room Not Found "+a+" or "+b)
+				return raw, nil, fmt.Errorf("Room Not Found " + a + " or " + b)
 			}
 			if a == b {
-				return raw, nil, fmt.Errorf("Link To Same Room "+a)
+				return raw, nil, fmt.Errorf("Link To Same Room " + a)
 			}
 
 			key := linkKey(a, b)
 			if seenLink[key] {
-				return raw, nil, fmt.Errorf("duplicate link "+key)
+				return raw, nil, fmt.Errorf("duplicate link " + key)
 			}
 			seenLink[key] = true
 
