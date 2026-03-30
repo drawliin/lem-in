@@ -70,7 +70,7 @@ func ParseFarm(filename string) (raw string, farm *Farm, err error) {
 		// decide if this is a room or a link
 		if isRoomLine(line) {
 			if linksMode {
-				return raw, nil, fmt.Errorf("Found Room After Link %d", lineNo) // rooms after links => invalid
+				return raw, nil, fmt.Errorf("Found Room After Link %d", lineNo)
 			}
 			r, roomErr := parseRoom(line)
 			if roomErr != nil {

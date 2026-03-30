@@ -24,6 +24,7 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 	doneCount := 0
 	for doneCount < f.Ants {
 		moves := make([]string, 0)
+		usedTunnels := make(map[string]bool)
 
 		// Move ants that are further ahead first
 		sort.Slice(ants, func(i, j int) bool {
@@ -47,10 +48,16 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 				continue
 			}
 
+			curRoom := path[a.Pos]
 			nextPos := a.Pos + 1
 			nextRoom := path[nextPos]
 
-			// Can always enter end
+			edge := linkKey(curRoom.Name, nextRoom.Name)
+			if usedTunnels[edge] {
+				continue // tunnel already used this turn
+			}
+
+			// Can always enter end (but tunnel capacity still applies above)
 			if nextRoom != f.End {
 				if _, ok := occupied[nextRoom.Name]; ok {
 					continue // room occupied
@@ -58,7 +65,6 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 			}
 
 			// leaving current room: free it if not start/end
-			curRoom := path[a.Pos]
 			if curRoom != f.Start && curRoom != f.End {
 				delete(occupied, curRoom.Name)
 			}
@@ -68,6 +74,7 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 				occupied[nextRoom.Name] = a.ID
 			}
 
+			usedTunnels[edge] = true
 			a.Pos = nextPos
 			if nextRoom == f.End {
 				a.Done = true
