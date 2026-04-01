@@ -2,10 +2,8 @@ package utils
 
 import (
 	"container/list"
-	"fmt"
 	"math"
 	"sort"
-	"strings"
 )
 
 const (
@@ -27,16 +25,6 @@ func FindPaths(f *Farm) [][]*Room {
 	all := collectAllPaths(f, dist, maxCandidatePaths, pathDepthSlack)
 	if len(all) == 0 {
 		return nil
-	}
-
-	// log all possible paths
-	fmt.Println("All Founded paths:", len(all))
-	for i, p := range all {
-		names := make([]string, 0, len(p))
-		for _, r := range p {
-			names = append(names, r.Name)
-		}
-		fmt.Printf("P%d: %s (edges=%d)\n", i+1, strings.Join(names, " -> "), len(p)-1)
 	}
 
 	best := chooseBestPaths(all, f.Ants)

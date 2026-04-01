@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"lem-in/utils"
 )
@@ -15,31 +14,18 @@ func main() {
 		return
 	}
 
-	fmt.Println("Starting Parsing Farm") // logger
 	raw, farm, err := utils.ParseFarm(os.Args[1])
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
 		return
 	}
 
-	fmt.Println("Finding Paths") // logger
 	paths := utils.FindPaths(farm)
 	if paths == nil {
 		fmt.Println("ERROR: invalid data format")
 		return
 	}
 
-	// Log Best Paths
-	fmt.Println("Best Founded paths:", len(paths))
-	for i, p := range paths {
-		names := make([]string, 0, len(p))
-		for _, r := range p {
-			names = append(names, r.Name)
-		}
-		fmt.Printf("P%d: %s (edges=%d)\n", i+1, strings.Join(names, " -> "), len(p)-1)
-	}
-
-	fmt.Println("Start Assigning ants") // logger
 	assign := utils.AssignAnts(farm.Ants, paths)
 
 	// Print input back exactly
@@ -49,6 +35,5 @@ func main() {
 	}
 	fmt.Println()
 
-	fmt.Println("Starting Simulation") // logger
 	utils.SimulateAndPrint(farm, paths, assign)
 }
