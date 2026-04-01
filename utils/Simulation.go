@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-// SimulateAndPrint advances ants one step per turn, respecting room occupancy,
-// and prints each turn in the required `L<id>-<room>` format.
 func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 	ants := make([]*AntState, 0, f.Ants)
 	for id := 1; id <= f.Ants; id++ {
@@ -32,7 +30,7 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 			if ants[i].Pos != ants[j].Pos {
 				return ants[i].Pos > ants[j].Pos
 			}
-			// tie: smaller ID first (stable-ish)
+			// tie: smaller ID first
 			return ants[i].ID < ants[j].ID
 		})
 
@@ -57,7 +55,7 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 				continue // tunnel already used this turn
 			}
 
-			// Can always enter end (but tunnel capacity still applies above)
+			// Can always enter end
 			if nextRoom != f.End {
 				if _, ok := occupied[nextRoom.Name]; ok {
 					continue // room occupied
@@ -85,8 +83,7 @@ func SimulateAndPrint(f *Farm, paths [][]*Room, assign []int) {
 		}
 
 		if len(moves) == 0 {
-			// No moves possible -> should not happen with valid disjoint paths,
-			// but avoid infinite loop.
+			// No moves possible
 			break
 		}
 

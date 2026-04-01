@@ -11,7 +11,7 @@ func isRoomLine(s string) bool {
 	return len(parts) == 3 && !strings.Contains(parts[0], "-")
 }
 
-// parseRoom converts a room line into a Room after validating its name and coordinates.
+// converts a room line into a Room after validating its name and coordinates.
 func parseRoom(s string) (*Room, error) {
 	parts := strings.Fields(s)
 	if len(parts) != 3 {

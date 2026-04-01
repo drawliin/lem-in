@@ -2,8 +2,10 @@ package utils
 
 import (
 	"container/list"
+	"fmt"
 	"math"
 	"sort"
+	"strings"
 )
 
 const (
@@ -11,31 +13,40 @@ const (
 	pathDepthSlack    = 8
 )
 
-// FindDisjointPaths builds several simple start->end candidates, then picks
-// the vertex-disjoint subset that minimizes total turns for all ants.
-func FindDisjointPaths(f *Farm) [][]*Room {
+func FindPaths(f *Farm) [][]*Room {
 	if f == nil || f.Start == nil || f.End == nil {
 		return nil
 	}
 
 	dist := distanceToEnd(f)
+	// if start cannot reach end.. return
 	if dist[f.Start] < 0 {
 		return nil
 	}
 
-	all := collectCandidatePaths(f, dist, maxCandidatePaths, pathDepthSlack)
+	all := collectAllPaths(f, dist, maxCandidatePaths, pathDepthSlack)
 	if len(all) == 0 {
 		return nil
 	}
 
-	best := chooseBestDisjointSet(all, f.Ants)
+	// log all possible paths
+	fmt.Println("All Founded paths:", len(all))
+	for i, p := range all {
+		names := make([]string, 0, len(p))
+		for _, r := range p {
+			names = append(names, r.Name)
+		}
+		fmt.Printf("P%d: %s (edges=%d)\n", i+1, strings.Join(names, " -> "), len(p)-1)
+	}
+
+	best := chooseBestPaths(all, f.Ants)
 	if len(best) == 0 {
 		return nil
 	}
 	return best
 }
 
-// distanceToEnd computes shortest edge-distance from every room to end.
+// computes how far each room is from end
 func distanceToEnd(f *Farm) map[*Room]int {
 	dist := make(map[*Room]int, len(f.Rooms))
 	for _, r := range f.Rooms {
@@ -59,82 +70,112 @@ func distanceToEnd(f *Farm) map[*Room]int {
 	return dist
 }
 
-// collectCandidatePaths enumerates near-shortest simple paths and keeps the
-// shortest candidates for subset evaluation.
-func collectCandidatePaths(f *Farm, dist map[*Room]int, maxCount, slack int) [][]*Room {
+func collectAllPaths(f *Farm, dist map[*Room]int, maxCount, slack int) [][]*Room {
 	minLen := dist[f.Start]
 	if minLen < 0 {
 		return nil
 	}
 
-	visited := map[*Room]bool{f.Start: true}
-	path := []*Room{f.Start}
 	all := make([][]*Room, 0, maxCount)
 
-	var dfs func(cur *Room)
-	dfs = func(cur *Room) {
-		if len(all) >= maxCount {
-			return
-		}
+	// open means paths we still want to explore.
+	open := []PathState{{
+		path:    []*Room{f.Start},
+		visited: map[*Room]bool{f.Start: true},
+	}}
+
+	for len(open) > 0 && len(all) < maxCount {
+		sort.Slice(open, func(i, j int) bool {
+			si, sj := open[i], open[j]
+			ei := EstimatePath(si.path, dist)
+			ej := EstimatePath(sj.path, dist)
+			if ei != ej {
+				return ei < ej
+			}
+			if len(si.path) != len(sj.path) {
+				return len(si.path) < len(sj.path)
+			}
+			return PathSignature(si.path) < PathSignature(sj.path)
+		})
+
+		curState := open[0]
+		open = open[1:]
+		cur := curState.path[len(curState.path)-1]
+
 		if cur == f.End {
-			cp := make([]*Room, len(path))
-			copy(cp, path)
-			all = append(all, cp)
-			return
+			all = append(all, curState.path)
+			continue
 		}
-
 		if dist[cur] < 0 {
-			return
+			continue
 		}
 
-		edgesSoFar := len(path) - 1
+		edgesSoFar := len(curState.path) - 1
 		bestPossible := edgesSoFar + dist[cur]
 		if bestPossible > minLen+slack {
-			return
+			continue
 		}
 
 		nexts := append([]*Room(nil), cur.Links...)
 		sort.Slice(nexts, func(i, j int) bool {
 			di, dj := dist[nexts[i]], dist[nexts[j]]
-			if di == dj {
-				return nexts[i].Name < nexts[j].Name
-			}
 			if di < 0 {
 				return false
 			}
 			if dj < 0 {
 				return true
 			}
+			if di == dj {
+				return nexts[i].Name < nexts[j].Name
+			}
 			return di < dj
 		})
 
 		for _, nxt := range nexts {
-			if visited[nxt] {
+			if curState.visited[nxt] {
 				continue
 			}
-			visited[nxt] = true
-			path = append(path, nxt)
-			dfs(nxt)
-			path = path[:len(path)-1]
-			visited[nxt] = false
-			if len(all) >= maxCount {
-				return
-			}
+
+			nextPath := make([]*Room, len(curState.path)+1)
+			copy(nextPath, curState.path)
+			nextPath[len(curState.path)] = nxt
+
+			nextVisited := CloneVisited(curState.visited)
+			nextVisited[nxt] = true
+
+			open = append(open, PathState{
+				path:    nextPath,
+				visited: nextVisited,
+			})
+		}
+
+		if len(open) > maxCount*maxCount {
+			sort.Slice(open, func(i, j int) bool {
+				si, sj := open[i], open[j]
+				ei := EstimatePath(si.path, dist)
+				ej := EstimatePath(sj.path, dist)
+				if ei != ej {
+					return ei < ej
+				}
+				if len(si.path) != len(sj.path) {
+					return len(si.path) < len(sj.path)
+				}
+				return PathSignature(si.path) < PathSignature(sj.path)
+			})
+			open = open[:maxCount*maxCount]
 		}
 	}
-
-	dfs(f.Start)
 
 	sort.Slice(all, func(i, j int) bool {
 		if len(all[i]) != len(all[j]) {
 			return len(all[i]) < len(all[j])
 		}
-		return pathSignature(all[i]) < pathSignature(all[j])
+		return PathSignature(all[i]) < PathSignature(all[j])
 	})
 	return all
 }
 
-func chooseBestDisjointSet(all [][]*Room, ants int) [][]*Room {
+func chooseBestPaths(all [][]*Room, ants int) [][]*Room {
 	bestTurns := math.MaxInt
 	bestLenSum := math.MaxInt
 	var best [][]*Room
@@ -142,117 +183,37 @@ func chooseBestDisjointSet(all [][]*Room, ants int) [][]*Room {
 	used := make(map[string]bool)
 	cur := make([][]*Room, 0, len(all))
 
-	var bt func(i int)
-	bt = func(i int) {
+	var helper func(i int)
+	helper = func(i int) {
 		if i == len(all) {
 			if len(cur) == 0 {
 				return
 			}
-			turns := minTurnsForSet(ants, cur)
-			lenSum := sumPathEdges(cur)
+			turns := MinTurnsForSet(ants, cur)
+			lenSum := SumPathEdges(cur)
 			if turns < bestTurns || (turns == bestTurns && lenSum < bestLenSum) {
 				bestTurns = turns
 				bestLenSum = lenSum
-				best = clonePaths(cur)
+				best = ClonePaths(cur)
 			}
 			return
 		}
 
 		// Skip current path
-		bt(i + 1)
+		helper(i + 1)
 
 		// Take current path if still disjoint by intermediate rooms
 		p := all[i]
-		if !canUsePath(p, used) {
+		if !CanUsePath(p, used) {
 			return
 		}
-		markPath(p, used, true)
+		MarkPath(p, used, true)
 		cur = append(cur, p)
-		bt(i + 1)
+		helper(i + 1)
 		cur = cur[:len(cur)-1]
-		markPath(p, used, false)
+		MarkPath(p, used, false)
 	}
 
-	bt(0)
+	helper(0)
 	return best
-}
-
-func canUsePath(p []*Room, used map[string]bool) bool {
-	for i := 1; i < len(p)-1; i++ {
-		if used[p[i].Name] {
-			return false
-		}
-	}
-	return true
-}
-
-func markPath(p []*Room, used map[string]bool, on bool) {
-	for i := 1; i < len(p)-1; i++ {
-		if on {
-			used[p[i].Name] = true
-		} else {
-			delete(used, p[i].Name)
-		}
-	}
-}
-
-func minTurnsForSet(ants int, paths [][]*Room) int {
-	if ants <= 0 || len(paths) == 0 {
-		return 0
-	}
-
-	minL := math.MaxInt
-	maxL := 0
-	for _, p := range paths {
-		e := len(p) - 1
-		if e < minL {
-			minL = e
-		}
-		if e > maxL {
-			maxL = e
-		}
-	}
-
-	lo, hi := minL, maxL+ants
-	for lo < hi {
-		mid := (lo + hi) / 2
-		cap := 0
-		for _, p := range paths {
-			e := len(p) - 1
-			if mid >= e {
-				cap += mid - e + 1
-			}
-		}
-		if cap >= ants {
-			hi = mid
-		} else {
-			lo = mid + 1
-		}
-	}
-	return lo
-}
-
-func sumPathEdges(paths [][]*Room) int {
-	total := 0
-	for _, p := range paths {
-		total += len(p) - 1
-	}
-	return total
-}
-
-func clonePaths(src [][]*Room) [][]*Room {
-	out := make([][]*Room, len(src))
-	copy(out, src)
-	return out
-}
-
-func pathSignature(p []*Room) string {
-	s := ""
-	for i, r := range p {
-		if i > 0 {
-			s += "->"
-		}
-		s += r.Name
-	}
-	return s
 }

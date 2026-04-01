@@ -1,7 +1,7 @@
 package utils
 
-// AssignAnts greedily assigns each ant to the path with the best current score
-// so shorter and less crowded paths receive more ants.
+// assigns each ant to the path with the best current score
+// shorter and less crowded paths receive more ants.
 func AssignAnts(ants int, paths [][]*Room) []int {
 	assign := make([]int, ants+1) // ignore 0
 	used := make([]int, len(paths))
@@ -24,9 +24,6 @@ func AssignAnts(ants int, paths [][]*Room) []int {
 	return assign
 }
 
-// score estimates how expensive a path is after assigning one more ant to it.
 func score(p []*Room, assigned int) int {
-	// smaller is better
-	// p length includes start+end, so edges = len(p)-1
 	return len(p) + assigned
 }
