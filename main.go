@@ -11,7 +11,7 @@ import (
 func main() {
 
 	if len(os.Args) != 2 {
-		fmt.Println("ERROR: invalid data format")
+		fmt.Println("ERROR: no given file")
 		return
 	}
 

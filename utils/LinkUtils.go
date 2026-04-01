@@ -2,9 +2,8 @@ package utils
 
 import "strings"
 
-// isLinkLine checks whether a line matches the `roomA-roomB` link format.
+// checks whether a line matches the `roomA-roomB` link format.
 func isLinkLine(s string) bool {
-	// exactly one '-', not at ends, and no spaces
 	if strings.ContainsAny(s, " \t") {
 		return false
 	}
@@ -23,7 +22,7 @@ func parseLink(s string) (string, string, error) {
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return "", "", ErrInvalid
 	}
-	// room names in links can't start with L/# either (safer)
+	// room names in links can't start with L/# either
 	for _, p := range parts {
 		if strings.HasPrefix(p, "L") || strings.HasPrefix(p, "#") {
 			return "", "", ErrInvalid
