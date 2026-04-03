@@ -4,16 +4,6 @@
 
 This repository is useful for anyone looking for a **Go lem-in solver**, **ant colony pathfinding project**, **graph traversal example in Go**, or a **42/1337 lem-in style implementation**.
 
-## Small Description
-
-This project reads an ant farm input file, builds a graph of rooms and tunnels, computes valid paths between the start and end rooms, distributes ants to reduce total turns, and outputs the movements in the expected `Lx-room` format.
-
-## Topics
-
-Suggested topics for GitHub SEO and discovery:
-
-`go`, `golang`, `lem-in`, `pathfinding`, `graph-algorithm`, `bfs`, `ant-colony`, `simulation`, `42-school`, `1337-school`, `algorithm`, `cli`
-
 ## Features
 
 - Parses farm files from disk
